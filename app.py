@@ -96,16 +96,16 @@ def grade_forecasting(ans, key, cfg):
     def add(label, ok, pts):
         checks.append({"Item": label, "Status": "Correct" if ok else "Incorrect", "Points": pts if ok else 0, "Max": pts})
 
-    add("3-period moving-average forecast", close_num(ans["ma_forecast"], key["ma_forecast"], cfg["forecast_tolerance"]), 5)
-    add("Moving-average MAD", close_num(ans["ma_mad"], key["ma_mad"], cfg["mad_tolerance"]), 5)
-    add("Exponential-smoothing forecast", close_num(ans["es_forecast"], key["es_forecast"], cfg["forecast_tolerance"]), 5)
-    add("Exponential-smoothing MAD", close_num(ans["es_mad"], key["es_mad"], cfg["mad_tolerance"]), 5)
-    add("ARIMA p", int(ans["p"]) == int(key["p"]), 2)
-    add("ARIMA d", int(ans["d"]) == int(key["d"]), 2)
-    add("ARIMA q", int(ans["q"]) == int(key["q"]), 2)
-    add("ARIMA next-period forecast", close_num(ans["arima_forecast"], key["arima_forecast"], cfg["forecast_tolerance"]), 7)
-    add("ARIMA MAD", close_num(ans["arima_mad"], key["arima_mad"], cfg["mad_tolerance"]), 7)
-    add("Method selected from MAD comparison", ans["selected_method"] == str(key["best_method"]), 5)
+    add("3-period moving-average forecast", close_num(ans["ma_forecast"], key["ma_forecast"], cfg["forecast_tolerance"]), 0.75)
+    add("Moving-average MAD", close_num(ans["ma_mad"], key["ma_mad"], cfg["mad_tolerance"]), 0.75)
+    add("Exponential-smoothing forecast", close_num(ans["es_forecast"], key["es_forecast"], cfg["forecast_tolerance"]), 0.75)
+    add("Exponential-smoothing MAD", close_num(ans["es_mad"], key["es_mad"], cfg["mad_tolerance"]), 0.75)
+    add("ARIMA p", int(ans["p"]) == int(key["p"]), 0.25)
+    add("ARIMA d", int(ans["d"]) == int(key["d"]), 0.25)
+    add("ARIMA q", int(ans["q"]) == int(key["q"]), 0.25)
+    add("ARIMA next-period forecast", close_num(ans["arima_forecast"], key["arima_forecast"], cfg["forecast_tolerance"]), 1.0)
+    add("ARIMA MAD", close_num(ans["arima_mad"], key["arima_mad"], cfg["mad_tolerance"]), 1.0)
+    add("Method selected from MAD comparison", ans["selected_method"] == str(key["best_method"]), 1.25)
     return checks
 
 
@@ -153,16 +153,18 @@ def managerial_problem(forecast, actual, key):
         total = carry * cc + alternate * oc
         prompt = (
             f"Your forecast was {forecast:.1f} units and actual demand was {actual:.1f} units, leaving "
-            f"{excess:.1f} excess units. {str(key['over_action']).capitalize()} costs ${cc:,.2f} per unit and "
-            f"is feasible for at most {cap:.0f} units. The alternative ({key['over_alt']}) costs ${oc:,.2f} per unit. "
-            "Calculate the cost-minimizing quantity to carry, the quantity handled by the alternative, and the total cost."
+            f"{excess:.1f} excess units. You may {str(key['over_action']).lower()} at a cost of USD {cc:,.2f} per unit, "
+            f"for at most {cap:.0f} units. Any excess units that are not carried must be handled by this option: "
+            f"{str(key['over_alt']).lower()}, at a cost of USD {oc:,.2f} per unit. "
+            "Calculate (1) the cost-minimizing quantity to carry, (2) the remaining quantity to handle using the stated "
+            "alternative, and (3) the total cost."
         )
         return {
             "branch": "Overforecast",
             "difference": excess,
             "prompt": prompt,
             "field1_label": "Units to carry",
-            "field2_label": "Units handled by the alternative",
+            "field2_label": f"Remaining units to {str(key['over_alt']).lower()}",
             "correct1": carry,
             "correct2": alternate,
             "correct_cost": total,
@@ -181,9 +183,9 @@ def managerial_problem(forecast, actual, key):
 
 def grade_managerial(student, problem, tol):
     return [
-        {"Item": problem["field1_label"], "Status": "Correct" if close_num(student["value1"], problem["correct1"], tol) else "Incorrect", "Points": 6 if close_num(student["value1"], problem["correct1"], tol) else 0, "Max": 6},
-        {"Item": problem["field2_label"], "Status": "Correct" if close_num(student["value2"], problem["correct2"], tol) else "Incorrect", "Points": 6 if close_num(student["value2"], problem["correct2"], tol) else 0, "Max": 6},
-        {"Item": "Total cost", "Status": "Correct" if close_num(student["cost"], problem["correct_cost"], max(1.0, tol)) else "Incorrect", "Points": 8 if close_num(student["cost"], problem["correct_cost"], max(1.0, tol)) else 0, "Max": 8},
+        {"Item": problem["field1_label"], "Status": "Correct" if close_num(student["value1"], problem["correct1"], tol) else "Incorrect", "Points": 0.75 if close_num(student["value1"], problem["correct1"], tol) else 0, "Max": 0.75},
+        {"Item": problem["field2_label"], "Status": "Correct" if close_num(student["value2"], problem["correct2"], tol) else "Incorrect", "Points": 0.75 if close_num(student["value2"], problem["correct2"], tol) else 0, "Max": 0.75},
+        {"Item": "Total cost", "Status": "Correct" if close_num(student["cost"], problem["correct_cost"], max(1.0, tol)) else "Incorrect", "Points": 1.5 if close_num(student["cost"], problem["correct_cost"], max(1.0, tol)) else 0, "Max": 1.5},
     ]
 
 
@@ -235,7 +237,7 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
         ("FONTSIZE", (0,0), (-1,-1), 8.5), ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
     ]))
-    story += [t, Spacer(1, 12), Paragraph(f"<b>Forecasting score:</b> {forecast_score}/45", styles["BodyText"]), Spacer(1, 10)]
+    story += [t, Spacer(1, 12), Paragraph(f"<b>Forecasting score:</b> {forecast_score:.2f}/7.00", styles["BodyText"]), Spacer(1, 10)]
 
     story.append(Paragraph("Hidden Demand Reveal", styles["Heading2"]))
     story.append(Paragraph(f"Selected forecast: <b>{sf:.2f}</b> units", styles["BodyText"]))
@@ -258,8 +260,8 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
         ("FONTSIZE", (0,0), (-1,-1), 8.5), ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
     ]))
-    story += [mt, Spacer(1, 12), Paragraph(f"<b>Managerial calculation score:</b> {manager_score}/20", styles["BodyText"])]
-    story += [Spacer(1, 12), Paragraph(f"<b>Automated Streamlit score:</b> {total}/65", styles["Heading2"])]
+    story += [mt, Spacer(1, 12), Paragraph(f"<b>Managerial calculation score:</b> {manager_score:.2f}/3.00", styles["BodyText"])]
+    story += [Spacer(1, 12), Paragraph(f"<b>Automated Streamlit score:</b> {total:.2f}/10.00", styles["Heading2"])]
     story.append(Paragraph("Submit this verified PDF together with your Excel workbook and the PDF of your completed Python notebook in Canvas.", styles["BodyText"]))
     doc.build(story)
     buf.seek(0)
@@ -356,7 +358,7 @@ forecast_checks = st.session_state.forecast_checks
 forecast_score = sum(x["Points"] for x in forecast_checks)
 st.markdown('<div class="score"><b>Your forecasting entries have been locked.</b> The app reports which submitted components are correct, but it does not reveal the private answer key.</div>', unsafe_allow_html=True)
 st.dataframe(pd.DataFrame(forecast_checks), use_container_width=True, hide_index=True)
-st.metric("Forecasting score", f"{forecast_score} / 45")
+st.metric("Forecasting score", f"{forecast_score:.2f} / 7.00")
 
 actual = float(key["actual"])
 sf = selected_forecast(answers)
@@ -388,14 +390,14 @@ manager_answers = st.session_state.manager_answers
 manager_checks = st.session_state.manager_checks
 manager_score = sum(x["Points"] for x in manager_checks)
 st.dataframe(pd.DataFrame(manager_checks), use_container_width=True, hide_index=True)
-st.metric("Managerial calculation score", f"{manager_score} / 20")
+st.metric("Managerial calculation score", f"{manager_score:.2f} / 3.00")
 
 st.markdown("## Step 5 — Download Your Verified Report")
 pdf_bytes, vcode, total = make_pdf(
     st.session_state.name, st.session_state.sid, code, key, answers, forecast_checks,
     problem, manager_answers, manager_checks, cfg["verification_salt"]
 )
-st.success(f"Automated Streamlit score: {total}/65")
+st.success(f"Automated Streamlit score: {total:.2f}/10.00")
 st.caption(f"Verification code: {vcode}")
 clean_sid = re.sub(r"[^A-Za-z0-9_-]", "_", st.session_state.sid)
 st.download_button(

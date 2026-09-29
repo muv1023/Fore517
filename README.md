@@ -56,3 +56,7 @@ The remaining assignment points can be graded from the Excel workbook and Python
 
 ## Dataset assignment
 Dataset assignment is deterministic from the student's entered ID. A student receives the same dataset when entering the same ID.
+
+## Version 5.1 scoring
+
+The automated Streamlit score is reported on a 10-point scale: 7 points for forecasting entries and 3 points for the post-reveal managerial calculation.
