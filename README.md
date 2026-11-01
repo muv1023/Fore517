@@ -60,3 +60,7 @@ Dataset assignment is deterministic from the student's entered ID. A student rec
 ## Version 5.1 scoring
 
 The automated Streamlit score is reported on a 10-point scale: 7 points for forecasting entries and 3 points for the post-reveal managerial calculation.
+
+
+## Version 5.2
+Correctness status and grades are hidden from students in both the Streamlit interface and generated PDF. The app still grades internally for instructor use.

@@ -219,25 +219,24 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
 
     story.append(Paragraph("Forecasting Submission", styles["Heading2"]))
     rows = [
-        ["Item", "Student Entry", "Result", "Points"],
-        ["MA forecast", f"{answers['ma_forecast']:.2f}", forecast_checks[0]["Status"], f"{forecast_checks[0]['Points']}/5"],
-        ["MA MAD", f"{answers['ma_mad']:.2f}", forecast_checks[1]["Status"], f"{forecast_checks[1]['Points']}/5"],
-        ["ES forecast", f"{answers['es_forecast']:.2f}", forecast_checks[2]["Status"], f"{forecast_checks[2]['Points']}/5"],
-        ["ES MAD", f"{answers['es_mad']:.2f}", forecast_checks[3]["Status"], f"{forecast_checks[3]['Points']}/5"],
-        ["ARIMA order", f"({answers['p']},{answers['d']},{answers['q']})", 
-         "Correct" if all(x['Status']=='Correct' for x in forecast_checks[4:7]) else "Check", f"{sum(x['Points'] for x in forecast_checks[4:7])}/6"],
-        ["ARIMA forecast", f"{answers['arima_forecast']:.2f}", forecast_checks[7]["Status"], f"{forecast_checks[7]['Points']}/7"],
-        ["ARIMA MAD", f"{answers['arima_mad']:.2f}", forecast_checks[8]["Status"], f"{forecast_checks[8]['Points']}/7"],
-        ["Selected method", answers['selected_method'], forecast_checks[9]["Status"], f"{forecast_checks[9]['Points']}/5"],
+        ["Item", "Student Entry"],
+        ["MA forecast", f"{answers['ma_forecast']:.2f}"],
+        ["MA MAD", f"{answers['ma_mad']:.2f}"],
+        ["ES forecast", f"{answers['es_forecast']:.2f}"],
+        ["ES MAD", f"{answers['es_mad']:.2f}"],
+        ["ARIMA order", f"({answers['p']},{answers['d']},{answers['q']})"],
+        ["ARIMA forecast", f"{answers['arima_forecast']:.2f}"],
+        ["ARIMA MAD", f"{answers['arima_mad']:.2f}"],
+        ["Selected method", answers['selected_method']],
     ]
-    t = Table(rows, repeatRows=1, colWidths=[130, 150, 85, 55])
+    t = Table(rows, repeatRows=1, colWidths=[190, 230])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), colors.HexColor(PRIMARY)), ("TEXTCOLOR", (0,0), (-1,0), colors.white),
         ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"), ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#dfe5ec")),
         ("FONTSIZE", (0,0), (-1,-1), 8.5), ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
     ]))
-    story += [t, Spacer(1, 12), Paragraph(f"<b>Forecasting score:</b> {forecast_score:.2f}/7.00", styles["BodyText"]), Spacer(1, 10)]
+    story += [t, Spacer(1, 12)]
 
     story.append(Paragraph("Hidden Demand Reveal", styles["Heading2"]))
     story.append(Paragraph(f"Selected forecast: <b>{sf:.2f}</b> units", styles["BodyText"]))
@@ -248,20 +247,20 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
     story.append(Paragraph("Managerial Calculation", styles["Heading2"]))
     story.append(Paragraph(problem["prompt"], styles["BodyText"]))
     mrows = [
-        ["Item", "Student Entry", "Result", "Points"],
-        [problem["field1_label"], f"{manager_answers['value1']:.2f}", manager_checks[0]["Status"], f"{manager_checks[0]['Points']}/6"],
-        [problem["field2_label"], f"{manager_answers['value2']:.2f}", manager_checks[1]["Status"], f"{manager_checks[1]['Points']}/6"],
-        ["Total cost", f"${manager_answers['cost']:,.2f}", manager_checks[2]["Status"], f"{manager_checks[2]['Points']}/8"],
+        ["Item", "Student Entry"],
+        [problem["field1_label"], f"{manager_answers['value1']:.2f}"],
+        [problem["field2_label"], f"{manager_answers['value2']:.2f}"],
+        ["Total cost", f"${manager_answers['cost']:,.2f}"],
     ]
-    mt = Table(mrows, repeatRows=1, colWidths=[180, 120, 85, 55])
+    mt = Table(mrows, repeatRows=1, colWidths=[240, 180])
     mt.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), colors.HexColor(PRIMARY)), ("TEXTCOLOR", (0,0), (-1,0), colors.white),
         ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"), ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#dfe5ec")),
         ("FONTSIZE", (0,0), (-1,-1), 8.5), ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
     ]))
-    story += [mt, Spacer(1, 12), Paragraph(f"<b>Managerial calculation score:</b> {manager_score:.2f}/3.00", styles["BodyText"])]
-    story += [Spacer(1, 12), Paragraph(f"<b>Automated Streamlit score:</b> {total:.2f}/10.00", styles["Heading2"])]
+    story += [mt, Spacer(1, 12)]
+    story.append(Paragraph("This report records your locked forecasting submission and managerial calculation. Correctness and grades are not displayed in the lab or report.", styles["BodyText"]))
     story.append(Paragraph("Submit this verified PDF together with your Excel workbook and the PDF of your completed Python notebook in Canvas.", styles["BodyText"]))
     doc.build(story)
     buf.seek(0)
@@ -338,7 +337,7 @@ if not st.session_state.locked:
     selected_method = st.selectbox("Which method would you recommend based on your analysis?", METHODS)
     confirm = st.checkbox("I understand that locking my answers will reveal the hidden future demand.")
     ready = all(v > 0 for v in [ma_forecast, ma_mad, es_forecast, es_mad, arima_forecast, arima_mad]) and confirm
-    if st.button("Grade, Lock, and Reveal Actual Demand", type="primary", disabled=not ready):
+    if st.button("Lock and Reveal Actual Demand", type="primary", disabled=not ready):
         answers = {
             "ma_forecast": float(ma_forecast), "ma_mad": float(ma_mad),
             "es_forecast": float(es_forecast), "es_mad": float(es_mad),
@@ -356,9 +355,7 @@ if not st.session_state.locked:
 answers = st.session_state.answers
 forecast_checks = st.session_state.forecast_checks
 forecast_score = sum(x["Points"] for x in forecast_checks)
-st.markdown('<div class="score"><b>Your forecasting entries have been locked.</b> The app reports which submitted components are correct, but it does not reveal the private answer key.</div>', unsafe_allow_html=True)
-st.dataframe(pd.DataFrame(forecast_checks), use_container_width=True, hide_index=True)
-st.metric("Forecasting score", f"{forecast_score:.2f} / 7.00")
+st.markdown('<div class="score"><b>Your forecasting entries have been locked.</b> Correctness and grades are recorded for instructor use but are not displayed.</div>', unsafe_allow_html=True)
 
 actual = float(key["actual"])
 sf = selected_forecast(answers)
@@ -389,15 +386,14 @@ if not st.session_state.manager_submitted:
 manager_answers = st.session_state.manager_answers
 manager_checks = st.session_state.manager_checks
 manager_score = sum(x["Points"] for x in manager_checks)
-st.dataframe(pd.DataFrame(manager_checks), use_container_width=True, hide_index=True)
-st.metric("Managerial calculation score", f"{manager_score:.2f} / 3.00")
+st.info("Your managerial calculation has been recorded. Correctness and grades are not displayed.")
 
 st.markdown("## Step 5 — Download Your Verified Report")
 pdf_bytes, vcode, total = make_pdf(
     st.session_state.name, st.session_state.sid, code, key, answers, forecast_checks,
     problem, manager_answers, manager_checks, cfg["verification_salt"]
 )
-st.success(f"Automated Streamlit score: {total:.2f}/10.00")
+st.success("Your verified forecasting report is ready to download.")
 st.caption(f"Verification code: {vcode}")
 clean_sid = re.sub(r"[^A-Za-z0-9_-]", "_", st.session_state.sid)
 st.download_button(
