@@ -69,8 +69,8 @@ def private_config():
         st.stop()
 
 
-def dataset_for_student(student_id, codes):
-    token = hashlib.sha256(student_id.strip().upper().encode("utf-8")).hexdigest()
+def dataset_for_student(student_name, codes):
+    token = hashlib.sha256(student_name.strip().upper().encode("utf-8")).hexdigest()
     return codes[int(token[:12], 16) % len(codes)]
 
 
@@ -193,7 +193,7 @@ def verification_code(salt, payload):
     return hmac.new(salt.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()[:18].upper()
 
 
-def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_answers, manager_checks, salt):
+def make_pdf(name, code, key, answers, forecast_checks, problem, manager_answers, manager_checks, salt):
     generated = datetime.now(timezone.utc)
     forecast_score = sum(x["Points"] for x in forecast_checks)
     manager_score = sum(x["Points"] for x in manager_checks)
@@ -201,7 +201,7 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
     actual = float(key["actual"])
     sf = selected_forecast(answers)
     err = actual - sf
-    payload = f"{sid}|{code}|{generated.isoformat()}|{answers}|{manager_answers}|{total}"
+    payload = f"{name}|{code}|{generated.isoformat()}|{answers}|{manager_answers}|{total}"
     vcode = verification_code(salt, payload)
 
     buf = io.BytesIO()
@@ -211,7 +211,6 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
     story = [Paragraph("BAN 517 Forecasting Decision Lab", styles["CenterTitle2"]), Spacer(1, 8)]
     story += [
         Paragraph(f"<b>Student:</b> {name}", styles["BodyText"]),
-        Paragraph(f"<b>Student ID:</b> {sid}", styles["BodyText"]),
         Paragraph(f"<b>Dataset:</b> {code} — {key['industry']}", styles["BodyText"]),
         Paragraph(f"<b>Generated (UTC):</b> {generated.strftime('%Y-%m-%d %H:%M:%S')}", styles["BodyText"]),
         Paragraph(f"<b>Verification code:</b> {vcode}", styles["BodyText"]), Spacer(1, 12),
@@ -270,7 +269,7 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
 cfg, datasets, codes = private_config()
 
 for key, default in {
-    "started": False, "locked": False, "manager_submitted": False, "name": "", "sid": "", "dataset_code": "",
+    "started": False, "locked": False, "manager_submitted": False, "name": "", "dataset_code": "",
     "answers": None, "forecast_checks": None, "manager_answers": None, "manager_checks": None,
 }.items():
     if key not in st.session_state:
@@ -285,16 +284,25 @@ with st.sidebar:
     st.caption("Use the same browser session until your PDF is generated.")
 
 if not st.session_state.started:
-    st.markdown('<div class="callout"><b>Workflow:</b> Identify yourself → download your assigned dataset → complete the forecasting work outside Streamlit → return and enter your answers → lock → reveal actual demand → solve the managerial calculation → download the verified PDF.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        name = st.text_input("Student name")
-    with c2:
-        sid = st.text_input("Student ID")
-    if st.button("Get My Dataset", type="primary", disabled=not(name.strip() and sid.strip())):
-        code = dataset_for_student(sid, codes)
+    st.markdown("""
+    <div class="callout">
+      <b>Workflow</b>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px;">
+        <div><b>1.</b> Enter your name</div>
+        <div><b>2.</b> Download dataset</div>
+        <div><b>3.</b> Complete forecasts</div>
+        <div><b>4.</b> Enter answers</div>
+        <div><b>5.</b> Lock forecast</div>
+        <div><b>6.</b> Reveal actual demand</div>
+        <div><b>7.</b> Solve managerial problem</div>
+        <div><b>8.</b> Download PDF</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+    name = st.text_input("Student name")
+    if st.button("Get My Dataset", type="primary", disabled=not name.strip()):
+        code = dataset_for_student(name, codes)
         st.session_state.name = name.strip()
-        st.session_state.sid = sid.strip()
         st.session_state.dataset_code = code
         st.session_state.started = True
         st.rerun()
@@ -386,20 +394,20 @@ if not st.session_state.manager_submitted:
 manager_answers = st.session_state.manager_answers
 manager_checks = st.session_state.manager_checks
 manager_score = sum(x["Points"] for x in manager_checks)
-st.info("Your managerial calculation has been recorded. .")
+st.info("Your managerial calculation has been recorded.")
 
 st.markdown("## Step 5 — Download Your Verified Report")
 pdf_bytes, vcode, total = make_pdf(
-    st.session_state.name, st.session_state.sid, code, key, answers, forecast_checks,
+    st.session_state.name,  code, key, answers, forecast_checks,
     problem, manager_answers, manager_checks, cfg["verification_salt"]
 )
 st.success("Your verified forecasting report is ready to download.")
 st.caption(f"Verification code: {vcode}")
-clean_sid = re.sub(r"[^A-Za-z0-9_-]", "_", st.session_state.sid)
+clean_name = re.sub(r"[^A-Za-z0-9_-]", "_", st.session_state.name)
 st.download_button(
     "Download Verified Forecasting Lab PDF",
     data=pdf_bytes,
-    file_name=f"BAN517_Forecasting_Lab_{clean_sid}.pdf",
+    file_name=f"BAN517_Forecasting_Lab_{clean_name}.pdf",
     mime="application/pdf",
     type="primary",
 )
