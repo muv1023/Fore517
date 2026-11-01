@@ -260,7 +260,7 @@ def make_pdf(name, sid, code, key, answers, forecast_checks, problem, manager_an
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
     ]))
     story += [mt, Spacer(1, 12)]
-    story.append(Paragraph("This report records your locked forecasting submission and managerial calculation. Correctness and grades are not displayed in the lab or report.", styles["BodyText"]))
+    story.append(Paragraph("This report records your locked forecasting submission and managerial calculation.  in the lab or report.", styles["BodyText"]))
     story.append(Paragraph("Submit this verified PDF together with your Excel workbook and the PDF of your completed Python notebook in Canvas.", styles["BodyText"]))
     doc.build(story)
     buf.seek(0)
@@ -355,7 +355,7 @@ if not st.session_state.locked:
 answers = st.session_state.answers
 forecast_checks = st.session_state.forecast_checks
 forecast_score = sum(x["Points"] for x in forecast_checks)
-st.markdown('<div class="score"><b>Your forecasting entries have been locked.</b> Correctness and grades are recorded for instructor use but are not displayed.</div>', unsafe_allow_html=True)
+st.markdown('<div class="score"><b>Your forecasting entries have been locked.</b> .</div>', unsafe_allow_html=True)
 
 actual = float(key["actual"])
 sf = selected_forecast(answers)
@@ -386,7 +386,7 @@ if not st.session_state.manager_submitted:
 manager_answers = st.session_state.manager_answers
 manager_checks = st.session_state.manager_checks
 manager_score = sum(x["Points"] for x in manager_checks)
-st.info("Your managerial calculation has been recorded. Correctness and grades are not displayed.")
+st.info("Your managerial calculation has been recorded. .")
 
 st.markdown("## Step 5 — Download Your Verified Report")
 pdf_bytes, vcode, total = make_pdf(
